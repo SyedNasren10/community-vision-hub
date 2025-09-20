@@ -47,6 +47,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        civic: {
+          blue: "hsl(var(--civic-blue))",
+          green: "hsl(var(--civic-green))",
+          orange: "hsl(var(--civic-orange))",
+          light: "hsl(var(--civic-light))",
+          dark: "hsl(var(--civic-dark))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -62,6 +69,19 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      backgroundImage: {
+        'gradient-civic': 'var(--gradient-civic)',
+        'gradient-hero': 'var(--gradient-hero)',
+        'gradient-card': 'var(--gradient-card)',
+      },
+      boxShadow: {
+        'civic': 'var(--shadow-civic)',
+        'card-civic': 'var(--shadow-card)',
+        'button-civic': 'var(--shadow-button)',
+      },
+      transitionTimingFunction: {
+        'civic': 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
       keyframes: {
         "accordion-down": {
