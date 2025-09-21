@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Search, Filter, Navigation, Layers } from "lucide-react";
-import { useState, Suspense, lazy } from "react";
+import { useState, Suspense, lazy, useEffect, useRef } from "react";
 
 // Dynamic imports for react-leaflet to avoid SSR issues
 const MapContainer = lazy(() => import("react-leaflet").then(module => ({ default: module.MapContainer })));
@@ -21,6 +21,13 @@ const Maps = () => {
   const [searchLocation, setSearchLocation] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [mapKey, setMapKey] = useState(0);
+  const mapRef = useRef(null);
+
+  // Force map remount when filters change to prevent initialization errors
+  useEffect(() => {
+    setMapKey(prev => prev + 1);
+  }, [filterStatus, filterCategory]);
 
   // Mock data for map markers/issues
   const mapIssues = [
@@ -198,10 +205,12 @@ const Maps = () => {
                     </div>
                   }>
                     <MapContainer
+                      key={mapKey}
                       center={[40.7128, -74.0060] as [number, number]}
                       zoom={12}
                       style={{ height: "100%", width: "100%" }}
                       className="z-0"
+                      ref={mapRef}
                     >
                       <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
