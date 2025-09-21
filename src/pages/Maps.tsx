@@ -4,18 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Search, Filter, Navigation, Layers } from "lucide-react";
-import { useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useState, Suspense, lazy } from "react";
 
-// Fix for default markers in React Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
+// Dynamic imports for react-leaflet to avoid SSR issues
+const MapContainer = lazy(() => import("react-leaflet").then(module => ({ default: module.MapContainer })));
+const TileLayer = lazy(() => import("react-leaflet").then(module => ({ default: module.TileLayer })));
+const Marker = lazy(() => import("react-leaflet").then(module => ({ default: module.Marker })));
+const Popup = lazy(() => import("react-leaflet").then(module => ({ default: module.Popup })));
+
+// Import leaflet styles and compatibility
+import "leaflet/dist/leaflet.css";
+import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.webpack.css";
+import "leaflet-defaulticon-compatibility";
 
 const Maps = () => {
   const [searchLocation, setSearchLocation] = useState("");
@@ -189,40 +189,50 @@ const Maps = () => {
             <Card className="shadow-card-civic">
               <CardContent className="p-0">
                 <div className="h-96 lg:h-[600px] rounded-lg overflow-hidden">
-                  <MapContainer
-                    center={[40.7128, -74.0060] as [number, number]}
-                    zoom={12}
-                    style={{ height: "100%", width: "100%" }}
-                    className="z-0"
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    {mapIssues
-                      .filter(issue => filterStatus === "all" || issue.status === filterStatus)
-                      .filter(issue => filterCategory === "all" || issue.category.toLowerCase().replace(' ', '-') === filterCategory)
-                      .map((issue) => (
-                        <Marker
-                          key={issue.id}
-                          position={[issue.coordinates.lat, issue.coordinates.lng]}
-                        >
-                          <Popup>
-                            <div className="p-2 min-w-[200px]">
-                              <h3 className="font-semibold text-sm mb-1">{issue.title}</h3>
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className={`px-2 py-1 rounded text-xs ${getStatusColor(issue.status)}`}>
-                                  {issue.status.replace('-', ' ')}
-                                </span>
-                                <span className="text-xs text-gray-600 capitalize">
-                                  {issue.urgency} priority
-                                </span>
+                  <Suspense fallback={
+                    <div className="h-full bg-gradient-to-br from-civic-light to-muted rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <MapPin className="h-8 w-8 text-primary mx-auto mb-2 animate-pulse" />
+                        <p className="text-muted-foreground">Loading map...</p>
+                      </div>
+                    </div>
+                  }>
+                    <MapContainer
+                      center={[40.7128, -74.0060] as [number, number]}
+                      zoom={12}
+                      style={{ height: "100%", width: "100%" }}
+                      className="z-0"
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      {mapIssues
+                        .filter(issue => filterStatus === "all" || issue.status === filterStatus)
+                        .filter(issue => filterCategory === "all" || issue.category.toLowerCase().replace(' ', '-') === filterCategory)
+                        .map((issue) => (
+                          <Marker
+                            key={issue.id}
+                            position={[issue.coordinates.lat, issue.coordinates.lng]}
+                          >
+                            <Popup>
+                              <div className="p-2 min-w-[200px]">
+                                <h3 className="font-semibold text-sm mb-1">{issue.title}</h3>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className={`px-2 py-1 rounded text-xs ${getStatusColor(issue.status)}`}>
+                                    {issue.status.replace('-', ' ')}
+                                  </span>
+                                  <span className="text-xs text-gray-600 capitalize">
+                                    {issue.urgency} priority
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-700">{issue.category}</p>
                               </div>
-                              <p className="text-xs text-gray-700">{issue.category}</p>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      ))}
-                  </MapContainer>
+                            </Popup>
+                          </Marker>
+                        ))}
+                    </MapContainer>
+                  </Suspense>
                 </div>
               </CardContent>
             </Card>
