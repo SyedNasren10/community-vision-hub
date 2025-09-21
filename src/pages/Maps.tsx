@@ -4,30 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Search, Filter, Navigation, Layers } from "lucide-react";
-import { useState, Suspense, lazy, useEffect, useRef } from "react";
-
-// Dynamic imports for react-leaflet to avoid SSR issues
-const MapContainer = lazy(() => import("react-leaflet").then(module => ({ default: module.MapContainer })));
-const TileLayer = lazy(() => import("react-leaflet").then(module => ({ default: module.TileLayer })));
-const Marker = lazy(() => import("react-leaflet").then(module => ({ default: module.Marker })));
-const Popup = lazy(() => import("react-leaflet").then(module => ({ default: module.Popup })));
-
-// Import leaflet styles and compatibility
-import "leaflet/dist/leaflet.css";
-import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.webpack.css";
-import "leaflet-defaulticon-compatibility";
+import { useState } from "react";
+import LeafletMap from "@/components/LeafletMap";
 
 const Maps = () => {
   const [searchLocation, setSearchLocation] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [mapKey, setMapKey] = useState(0);
-  const mapRef = useRef(null);
-
-  // Force map remount when filters change to prevent initialization errors
-  useEffect(() => {
-    setMapKey(prev => prev + 1);
-  }, [filterStatus, filterCategory]);
 
   // Mock data for map markers/issues
   const mapIssues = [
@@ -196,52 +179,11 @@ const Maps = () => {
             <Card className="shadow-card-civic">
               <CardContent className="p-0">
                 <div className="h-96 lg:h-[600px] rounded-lg overflow-hidden">
-                  <Suspense fallback={
-                    <div className="h-full bg-gradient-to-br from-civic-light to-muted rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <MapPin className="h-8 w-8 text-primary mx-auto mb-2 animate-pulse" />
-                        <p className="text-muted-foreground">Loading map...</p>
-                      </div>
-                    </div>
-                  }>
-                    <MapContainer
-                      key={mapKey}
-                      center={[40.7128, -74.0060] as [number, number]}
-                      zoom={12}
-                      style={{ height: "100%", width: "100%" }}
-                      className="z-0"
-                      ref={mapRef}
-                    >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      {mapIssues
-                        .filter(issue => filterStatus === "all" || issue.status === filterStatus)
-                        .filter(issue => filterCategory === "all" || issue.category.toLowerCase().replace(' ', '-') === filterCategory)
-                        .map((issue) => (
-                          <Marker
-                            key={issue.id}
-                            position={[issue.coordinates.lat, issue.coordinates.lng]}
-                          >
-                            <Popup>
-                              <div className="p-2 min-w-[200px]">
-                                <h3 className="font-semibold text-sm mb-1">{issue.title}</h3>
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className={`px-2 py-1 rounded text-xs ${getStatusColor(issue.status)}`}>
-                                    {issue.status.replace('-', ' ')}
-                                  </span>
-                                  <span className="text-xs text-gray-600 capitalize">
-                                    {issue.urgency} priority
-                                  </span>
-                                </div>
-                                <p className="text-xs text-gray-700">{issue.category}</p>
-                              </div>
-                            </Popup>
-                          </Marker>
-                        ))}
-                    </MapContainer>
-                  </Suspense>
+                  <LeafletMap 
+                    mapIssues={mapIssues}
+                    filterStatus={filterStatus}
+                    filterCategory={filterCategory}
+                  />
                 </div>
               </CardContent>
             </Card>
