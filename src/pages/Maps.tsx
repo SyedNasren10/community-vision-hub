@@ -5,6 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Search, Filter, Navigation, Layers } from "lucide-react";
 import { useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix for default markers in React Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 const Maps = () => {
   const [searchLocation, setSearchLocation] = useState("");
@@ -177,27 +188,41 @@ const Maps = () => {
           <div className="lg:col-span-2">
             <Card className="shadow-card-civic">
               <CardContent className="p-0">
-                {/* Placeholder for actual map integration */}
-                <div className="h-96 lg:h-[600px] bg-gradient-to-br from-civic-light to-muted rounded-lg flex items-center justify-center relative overflow-hidden">
-                  <div className="text-center z-10">
-                    <MapPin className="h-16 w-16 text-primary mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Interactive Map</h3>
-                    <p className="text-muted-foreground mb-4 max-w-md">
-                      Map integration requires Mapbox API. Connect your Mapbox account to display
-                      interactive maps with issue locations.
-                    </p>
-                    <Button variant="outline">
-                      Configure Map Integration
-                    </Button>
-                  </div>
-                  
-                  {/* Mock map elements */}
-                  <div className="absolute inset-0 opacity-20">
-                    <div className="absolute top-1/4 left-1/3 w-3 h-3 bg-accent rounded-full animate-pulse"></div>
-                    <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-primary rounded-full animate-pulse"></div>
-                    <div className="absolute top-3/4 right-1/3 w-3 h-3 bg-secondary rounded-full animate-pulse"></div>
-                    <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-accent rounded-full animate-pulse"></div>
-                  </div>
+                <div className="h-96 lg:h-[600px] rounded-lg overflow-hidden">
+                  <MapContainer
+                    center={[40.7128, -74.0060] as [number, number]}
+                    zoom={12}
+                    style={{ height: "100%", width: "100%" }}
+                    className="z-0"
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    {mapIssues
+                      .filter(issue => filterStatus === "all" || issue.status === filterStatus)
+                      .filter(issue => filterCategory === "all" || issue.category.toLowerCase().replace(' ', '-') === filterCategory)
+                      .map((issue) => (
+                        <Marker
+                          key={issue.id}
+                          position={[issue.coordinates.lat, issue.coordinates.lng]}
+                        >
+                          <Popup>
+                            <div className="p-2 min-w-[200px]">
+                              <h3 className="font-semibold text-sm mb-1">{issue.title}</h3>
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={`px-2 py-1 rounded text-xs ${getStatusColor(issue.status)}`}>
+                                  {issue.status.replace('-', ' ')}
+                                </span>
+                                <span className="text-xs text-gray-600 capitalize">
+                                  {issue.urgency} priority
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-700">{issue.category}</p>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      ))}
+                  </MapContainer>
                 </div>
               </CardContent>
             </Card>
